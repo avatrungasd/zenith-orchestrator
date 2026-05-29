@@ -1,19 +1,27 @@
 #![no_std]
-use sails_rs::prelude::*;
+
+use sails_rs::{cell::RefCell, prelude::*};
 
 pub mod services;
-use services::orchestrator::OrchestratorService;
+use services::orchestrator::{OrchestratorService, OrchestratorState};
 
-pub struct OrchestratorProgram;
+pub struct OrchestratorProgram {
+    state: RefCell<OrchestratorState>,
+}
 
 #[sails_rs::program]
 impl OrchestratorProgram {
-    pub fn init(operator: ActorId) -> Self {
-        OrchestratorService::init(operator);
-        Self
+    pub fn New(operator: ActorId) -> Self {
+        Self {
+            state: RefCell::new(OrchestratorState {
+                tasks: sails_rs::collections::BTreeMap::new(),
+                task_count: 0,
+                operator_address: operator,
+            }),
+        }
     }
 
-    pub fn orchestrator(&self) -> OrchestratorService {
-        OrchestratorService::new()
+    pub fn orchestrator(&self) -> OrchestratorService<'_> {
+        OrchestratorService::new(&self.state)
     }
 }

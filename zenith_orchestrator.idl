@@ -1,0 +1,26 @@
+type TaskStatus = enum {
+  Pending,
+  Assigned,
+  Completed,
+};
+
+type TaskOrder = struct {
+  id: u64,
+  client: actor_id,
+  assigned_agent: actor_id,
+  description: str,
+  budget: u128,
+  status: TaskStatus,
+};
+
+constructor {
+  New : (operator: actor_id);
+};
+
+service Orchestrator {
+  CreateTask : (description: str) -> u64;
+  AssignTask : (task_id: u64, agent: actor_id) -> bool;
+  CompleteTask : (task_id: u64) -> bool;
+  query GetPendingTasks : () -> vec TaskOrder;
+  query GetTask : (task_id: u64) -> opt TaskOrder;
+};

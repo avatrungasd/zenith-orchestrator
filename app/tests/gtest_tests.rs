@@ -1,17 +1,9 @@
 use gstd::ActorId;
 use sails_rs::gtest::System;
+use zenith_orchestrator::OrchestratorProgram;
 
 #[test]
 fn test_orchestrator_flow() {
-    let sys = System::new();
-    sys.init_logger();
-    
-    let operator = ActorId::from(100);
-    let client = ActorId::from(200);
-    let agent = ActorId::from(300);
-    
-    // Verify basic identities compile successfully
-    assert_eq!(operator, ActorId::from(100));
-    assert_eq!(client, ActorId::from(200));
-    assert_eq!(agent, ActorId::from(300));
+    let idl = sails_idl_gen::program::generate_idl::<zenith_orchestrator::OrchestratorProgram>();
+    panic!("GENERATED_IDL_START\n{}\nGENERATED_IDL_END", idl);
 }
