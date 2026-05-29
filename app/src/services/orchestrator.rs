@@ -2,7 +2,6 @@ use sails_rs::{
     gstd::msg,
     prelude::*,
     collections::BTreeMap,
-    cell::RefCell,
 };
 
 #[sails_rs::sails_type]
@@ -30,22 +29,32 @@ pub struct OrchestratorState {
     pub operator_address: ActorId,
 }
 
-pub struct OrchestratorService<'a> {
-    state: &'a RefCell<OrchestratorState>,
-}
+static mut STATE: Option<OrchestratorState> = None;
 
-impl<'a> OrchestratorService<'a> {
-    pub fn new(state: &'a RefCell<OrchestratorState>) -> Self {
-        Self { state }
+pub struct OrchestratorService;
+
+impl OrchestratorService {
+    pub fn init(operator: ActorId) {
+        unsafe {
+            STATE = Some(OrchestratorState {
+                tasks: BTreeMap::new(),
+                task_count: 0,
+                operator_address: operator,
+            });
+        }
+    }
+
+    pub fn new() -> Self {
+        Self
     }
 }
 
 #[sails_rs::service]
-impl<'a> OrchestratorService<'a> {
+impl OrchestratorService {
     // Methods
     #[export]
     pub fn create_task(&mut self, description: String) -> u64 {
-        let mut state = self.state.borrow_mut();
+        let state = unsafe { STATE.as_mut().expect("State not initialized") };
         let budget = msg::value();
         
         state.task_count += 1;
@@ -64,7 +73,7 @@ impl<'a> OrchestratorService<'a> {
 
     #[export]
     pub fn assign_task(&mut self, task_id: u64, agent: ActorId) -> bool {
-        let mut state = self.state.borrow_mut();
+        let state = unsafe { STATE.as_mut().expect("State not initialized") };
         assert_eq!(msg::source(), state.operator_address, "Only operator can assign tasks");
         
         if let Some(task) = state.tasks.get_mut(&task_id) {
@@ -79,7 +88,7 @@ impl<'a> OrchestratorService<'a> {
 
     #[export]
     pub fn complete_task(&mut self, task_id: u64) -> bool {
-        let mut state = self.state.borrow_mut();
+        let state = unsafe { STATE.as_mut().expect("State not initialized") };
         assert_eq!(msg::source(), state.operator_address, "Only operator can mark task as completed");
         
         if let Some(task) = state.tasks.get_mut(&task_id) {
@@ -94,7 +103,7 @@ impl<'a> OrchestratorService<'a> {
     // Queries
     #[export]
     pub fn get_pending_tasks(&self) -> Vec<TaskOrder> {
-        let state = self.state.borrow();
+        let state = unsafe { STATE.as_ref().expect("State not initialized") };
         state.tasks.values()
             .filter(|t| t.status == TaskStatus::Pending)
             .cloned()
@@ -103,7 +112,7 @@ impl<'a> OrchestratorService<'a> {
 
     #[export]
     pub fn get_task(&self, task_id: u64) -> Option<TaskOrder> {
-        let state = self.state.borrow();
+        let state = unsafe { STATE.as_ref().expect("State not initialized") };
         state.tasks.get(&task_id).cloned()
     }
 }
