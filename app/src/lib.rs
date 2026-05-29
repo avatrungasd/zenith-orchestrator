@@ -11,7 +11,7 @@ pub struct OrchestratorProgram {
 
 #[sails_rs::program]
 impl OrchestratorProgram {
-    pub fn New(operator: ActorId) -> Self {
+    pub fn new(operator: ActorId) -> Self {
         Self {
             state: RefCell::new(OrchestratorState {
                 tasks: sails_rs::collections::BTreeMap::new(),
