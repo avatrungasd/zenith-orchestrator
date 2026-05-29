@@ -1,100 +1,100 @@
-# Zenith Orchestrator
-> **Decentralized Task Allocation & Budget Coordination Hub for Vara Network**
+# Zenith Task Orchestration Hub
+> Decentralized General Contractor, Task Allocation, and Budget Routing System
 
-Zenith Orchestrator acts as the master coordinating brain—a **Decentralized General Contractor**—built for the **Vara A2A Network — Agents Arena Season 1 Hackathon**. By deploying robust on-chain Sails smart contracts in tandem with a smart round-robin task matcher bot, Zenith Orchestrator automates work assignment, agent matching, and secure payout coordination across the entire decentralized agent network.
-
----
-
-## 🌟 Key Features
-
-*   **Trustless Task Allocation**: Clients can publish tasks and deposit escrow budgets directly into the smart contract, ensuring guaranteed rewards upon successful delivery.
-*   **Operator-Enforced Security**: Task assignments and completions are cryptographically restricted to the authorized operator (the Coordination Bot), preventing front-running or malicious claims.
-*   **Dynamic Round-Robin Router**: An off-chain crawler that aggregates live agent endpoints and runs load-balanced task assignment algorithms to maximize network utility.
+Zenith Orchestrator is a backend task coordination and budget allocation system engineered for the **Vara A2A Network**. Designed as a "Decentralized General Contractor", the protocol automates workload distribution, verification, and payment routing among autonomous network agents.
 
 ---
 
-## 📐 Architecture Overview
+## System Core Features
 
-```mermaid
-graph TD
-    subgraph On-Chain (Sails Contract)
-        SC[OrchestratorService Contract] --> State[HashMap u64, TaskOrder]
-        SC --> Escrow[Escrowed Client Funds]
-    end
-    subgraph Off-Chain (Orchestrator Bot)
-        Bot[Zenith Orchestrator Bot] --> Crawler[GraphQL Registry Crawler]
-        Crawler --> |Crawls Active Agents| API[Vara Network GraphQL API]
-        Bot --> |Round-Robin Matcher| Matcher[Agent Router Algorithm]
-        Matcher --> |Kicks Off Task Assignment| SC
-    end
+*   **Trustless Escrow Payouts**: Budget deposits are escrowed directly in the contract state upon task creation, ensuring reward guarantee.
+*   **Operator Cryptographic Locks**: Work execution and payout releases are strictly restricted to the Operator's signature (coordination daemon).
+*   **Round-Robin Task Balancer**: Off-chain matching daemon that routes workloads based on agent specialties and network capabilities.
+
+---
+
+## Data Structure Specs
+
+### TaskOrder Schema (JSON representation)
+```json
+{
+  "id": "u64 (Task ID)",
+  "client": "ActorId (Client Address)",
+  "assigned_agent": "ActorId (Agent Address)",
+  "description": "String (Task Description)",
+  "budget": "u128 (Escrowed Budget in VARA)",
+  "status": "TaskStatus (Pending | Assigned | Completed)"
+}
 ```
 
 ---
 
-## ⚙️ Smart Contract Specifications (Sails Framework)
+## Contract API Reference
 
-Built on the advanced **Sails Rust Framework**, the contract guarantees trustless financial and operational alignment:
+### 1. State Variables
+*   `tasks`: `HashMap<u64, TaskOrder>`
+*   `task_count`: `u64`
+*   `operator_address`: `ActorId`
 
-### 1. State
-*   `tasks`: `HashMap<u64, TaskOrder>` storing active client tasks containing client addresses, assigned agent addresses, job descriptions, escrowed budget values, and current work status (`TaskStatus`: Pending, Assigned, Completed).
-*   `task_count`: Monotonically increasing task indexer.
-*   `operator_address`: `ActorId` designating the authorized coordinating router.
+### 2. Transaction Methods
+```rust
+// Clients create a task and attach VARA tokens
+pub fn create_task(&mut self, description: String) -> u64;
 
-### 2. Service Methods
-*   `create_task(description: String) -> u64`: Clients initiate a task and deposit their budget directly into the smart contract's state.
-*   `assign_task(task_id: u64, agent: ActorId) -> bool`: Authorized Operator assigns the task to a verified, active agent.
-*   `complete_task(task_id: u64) -> bool`: Authorized Operator marks the task completed and prepares the release of escrowed rewards to the assigned agent.
+// Operator routes and assigns the task to a specific agent
+pub fn assign_task(&mut self, task_id: u64, agent: ActorId) -> bool;
 
-### 3. Service Queries
-*   `get_pending_tasks() -> Vec<TaskOrder>`: Returns all funded tasks currently awaiting agent assignment.
-*   `get_task(task_id: u64) -> Option<TaskOrder>`: Queries comprehensive details of a specific task.
+// Operator verifies work and releases budget to the agent
+pub fn complete_task(&mut self, task_id: u64) -> bool;
+```
+
+### 3. State Queries
+```rust
+// Returns tasks currently in the 'Pending' queue
+pub fn get_pending_tasks(&self) -> Vec<TaskOrder>;
+
+// Queries details of a specific task by ID
+pub fn get_task(&self, task_id: u64) -> Option<TaskOrder>;
+```
 
 ---
 
-## 🤖 Off-Chain Coordination Daemon
+## Daemon Integration & Orchestration
 
-The off-chain engine acts as the decentralized coordinator. It crawls registered agent entities via GraphQL and matches incoming client requirements with specialized service providers (such as sentiment analysis, game logic, or oracle services).
+The Zenith off-chain coordinator daemon polls the Vara Network indexer via GraphQL, maps agent statuses, and assigns pending workflows in a load-balanced round-robin scheme.
 
-*   **Endpoint queried**: `https://agents.vara.network/api/agents/graphql`
-*   **Real-time Output**: Live mapping shows tasks (e.g., Sentiment analysis, PR distribution, Network statistics) successfully assigned to network leaders like `agent-tic-tac-toe`, `vara-rng`, and `kai-oracle-app`.
+*   **Target GraphQL API**: `https://agents.vara.network/api/agents/graphql`
+*   **Routing Logic**: Allocates workloads (e.g., Sentiment analysis, PR pitches, Data aggregation) to proven ecosystem agents (like `agent-tic-tac-toe` or `vara-rng`).
 
 ---
 
-## 🚀 Quick Start Guide
+## Installation & Deployment Guide
 
-### Prerequisites
-*   Rust (stable toolchain with `wasm32-unknown-unknown` target)
-*   Node.js (v18+)
-
-### 1. Build Smart Contract
+### Compiling Sails Contract (Target WebAssembly)
 ```bash
-# Navigate to the workspace
 cd zenith-orchestrator
-
-# Build the WASM contract binary
 cargo build --release --target wasm32-unknown-unknown
 ```
-The resulting `.wasm` and `.idl` files will be generated in `target/wasm32-unknown-unknown/release/`.
+Output compiled files will be located in `target/wasm32-unknown-unknown/release/`.
 
-### 2. Install Orchestrator Bot Dependencies
-```bash
-cd bot
-npm install
-```
-
-### 3. Configure and Launch the Bot
-Create a `.env` file in the `bot` directory:
-```env
-VARA_RPC=wss://rpc.vara.network
-CONTRACT_ADDRESS=<YOUR_DEPLOYED_PROGRAM_ID>
-OPERATOR_SEED=<YOUR_WALLET_SECRET_SEED>
-```
-Run the daemon:
-```bash
-node index.js
-```
+### Launching the Coordinator Bot
+1. Install node dependencies:
+   ```bash
+   cd bot
+   npm install
+   ```
+2. Configure environmental variables `.env`:
+   ```env
+   VARA_RPC=wss://rpc.vara.network
+   CONTRACT_ADDRESS=<DEPLOYED_PROGRAM_ID>
+   OPERATOR_SEED=<COORDINATOR_WALLET_SEED>
+   ```
+3. Boot the coordination bot:
+   ```bash
+   node index.js
+   ```
 
 ---
 
-## 🛡️ License
-Distributed under the MIT License. See `LICENSE` for more information.
+## License
+MIT License.
