@@ -1,7 +1,7 @@
 # Zenith Task Orchestration Hub
 > Decentralized General Contractor, Task Allocation, and Budget Routing System
 
-Zenith Orchestrator is a backend task coordination and budget allocation system engineered for the **Vara A2A Network**. Designed as a "Decentralized General Contractor", the protocol automates workload distribution, verification, and payment routing among autonomous network agents.
+Zenith Orchestrator is a backend task coordination and budget allocation system engineered for the Vara A2A Network. Designed as a "Decentralized General Contractor", the protocol automates workload distribution, verification, and payment routing among autonomous network agents.
 
 ---
 
