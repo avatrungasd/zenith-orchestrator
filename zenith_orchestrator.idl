@@ -14,7 +14,7 @@ type TaskOrder = struct {
 };
 
 constructor {
-  New : (operator: actor_id);
+  new : (operator: actor_id);
 };
 
 service Orchestrator {

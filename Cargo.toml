@@ -3,8 +3,14 @@ resolver = "2"
 members = ["app"]
 
 [workspace.dependencies]
-gstd = "1.4.2"
+gstd = "1.10.0"
 sails-rs = "1.0.0"
 sails-idl-gen = "1.0.0"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
 
 
