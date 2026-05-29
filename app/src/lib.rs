@@ -8,7 +8,7 @@ pub struct OrchestratorProgram;
 
 #[sails_rs::program]
 impl OrchestratorProgram {
-    pub fn init(operator: ActorId) -> Self {
+    pub fn New(operator: ActorId) -> Self {
         OrchestratorService::init(operator);
         Self
     }
