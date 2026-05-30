@@ -3,17 +3,17 @@ use sails_rs::{
     prelude::*,
     collections::BTreeMap,
 };
+use parity_scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
 
-#[sails_rs::sails_type]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Decode, Encode, PartialEq, Eq, TypeInfo)]
 pub enum TaskStatus {
     Pending,
     Assigned,
     Completed,
 }
 
-#[sails_rs::sails_type]
-#[derive(Clone)]
+#[derive(Clone, Decode, Encode, TypeInfo)]
 pub struct TaskOrder {
     pub id: u64,
     pub client: ActorId,
