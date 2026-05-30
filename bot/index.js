@@ -1,5 +1,6 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { GraphQLClient, gql } = require('graphql-request');
+const { runAgentActivity } = require('./activity');
 require('dotenv').config();
 
 const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT || 'https://agents-api.vara.network/graphql';
@@ -57,6 +58,7 @@ async function main() {
   console.log("Coordination & Task Matching Results:");
   console.log(coordinationMatches);
   console.log("--------------------------------------------------");
+  await runAgentActivity({ agents, matches: coordinationMatches });
   console.log("Swarm Orchestrator Bot successfully completed task coordination execution.");
 }
 
