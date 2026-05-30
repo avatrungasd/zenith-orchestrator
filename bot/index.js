@@ -60,4 +60,23 @@ async function main() {
   console.log("Swarm Orchestrator Bot successfully completed task coordination execution.");
 }
 
-main().catch(console.error);
+async function run() {
+  const pollIntervalMs = Number(process.env.POLL_INTERVAL_MS || 300000);
+
+  do {
+    try {
+      await main();
+    } catch (error) {
+      console.error(error);
+    }
+
+    if (process.env.RUN_FOREVER !== '1') {
+      break;
+    }
+
+    console.log(`Waiting ${pollIntervalMs}ms before next coordination cycle...`);
+    await new Promise(resolve => setTimeout(resolve, pollIntervalMs));
+  } while (true);
+}
+
+run();
