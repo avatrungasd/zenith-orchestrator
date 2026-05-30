@@ -1,6 +1,7 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 const { GraphQLClient, gql } = require('graphql-request');
 const { runAgentActivity } = require('./activity');
+const { runCrossAppActivity } = require('./cross-app-activity');
 require('dotenv').config();
 
 const GRAPHQL_ENDPOINT = process.env.GRAPHQL_ENDPOINT || 'https://agents-api.vara.network/graphql';
@@ -59,6 +60,11 @@ async function main() {
   console.log(coordinationMatches);
   console.log("--------------------------------------------------");
   await runAgentActivity({ agents, matches: coordinationMatches });
+  try {
+    await runCrossAppActivity();
+  } catch (error) {
+    console.error('Zenith cross-app activity failed:', error.message || error);
+  }
   console.log("Swarm Orchestrator Bot successfully completed task coordination execution.");
 }
 
