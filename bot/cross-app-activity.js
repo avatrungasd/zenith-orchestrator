@@ -17,6 +17,8 @@ const SENTINEL_ANALYTICS_IDL = 'D:\\vara2\\sentinel-analytics\\agent.idl';
 const TRUST_LAYER_OWNER = '0xa223c6a7e56cd7cfc6d62ea60d3d17dfee700e62658018ddcadc7ebd5976b62d';
 const SENTINEL_OPERATOR = '0x44e35db8ad4cf866fcd43ed79cc90929ecb982992cc7f023a54b33a9e8c10e02';
 const WALLET_DIR = 'C:\\Users\\XuanCanh\\.vara-wallet';
+const CROSS_APP_REWARD_RAW = process.env.CROSS_APP_REWARD_RAW || '50000000000';
+const CROSS_APP_REWARD_VALUE = process.env.CROSS_APP_REWARD_VALUE || '0.05';
 
 const CONFIG = {
   account: 'zenith-orchestrator-wallet',
@@ -53,6 +55,17 @@ async function graphql(query) {
 
 function num(value) {
   return Number(value || 0);
+}
+
+async function deadlineBlock() {
+  if (process.env.CROSS_APP_DEADLINE_BLOCK) return Number(process.env.CROSS_APP_DEADLINE_BLOCK);
+  const { stdout } = await execFileAsync('cmd.exe', ['/c', 'vara-wallet.cmd', '--network', 'mainnet', 'query', 'system', 'number'], {
+    env: { ...process.env, VARA_WALLET_DIR: WALLET_DIR },
+    windowsHide: true,
+    maxBuffer: 1024 * 1024,
+  });
+  const currentBlock = Number(JSON.parse(stdout).result || 0);
+  return currentBlock + Number(process.env.CROSS_APP_DEADLINE_BLOCKS || 43200);
 }
 
 async function loadLiveContext() {
@@ -116,7 +129,7 @@ async function ensureMarketplaceProvider(state) {
   console.log('Zenith registered on Trust Marketplace:', result);
 }
 
-function chooseAction(target, sequence, current) {
+function chooseAction(target, sequence, current, deadline) {
   const metric = target.metric || {};
   const needsIndependentRiskReview =
     num(metric.integrationsIn) <= num(metric.integrationsOut) ||
@@ -149,10 +162,11 @@ function chooseAction(target, sequence, current) {
         args: [
           `Coordinate integration path for ${target.handle}`,
           `trust-suite://zenith/live-mission/${target.handle}/${sequence}/${current}`,
-          '50000000000',
-          Number(process.env.CROSS_APP_DEADLINE_BLOCK || 33450000),
+          CROSS_APP_REWARD_RAW,
+          deadline,
           ['coordination', 'integration', target.track || 'services'],
         ],
+        value: CROSS_APP_REWARD_VALUE,
       },
     };
   }
@@ -164,7 +178,8 @@ function chooseAction(target, sequence, current) {
         pid: TRUST_MARKETPLACE_PID,
         method: 'TrustMarketplace/CreateHireIntent',
         idl: TRUST_MARKETPLACE_IDL,
-        args: [TRUST_LAYER_OWNER, `trust-suite://zenith/hire-routing-support/${target.handle}/${sequence}/${current}`, '50000000000', Number(process.env.CROSS_APP_DEADLINE_BLOCK || 33450000)],
+        args: [TRUST_LAYER_OWNER, `trust-suite://zenith/hire-routing-support/${target.handle}/${sequence}/${current}`, CROSS_APP_REWARD_RAW, deadline],
+        value: CROSS_APP_REWARD_VALUE,
       },
     };
   }
@@ -176,7 +191,7 @@ function chooseAction(target, sequence, current) {
       method: 'AgentTrustLayer/CreateEscrow',
       idl: TRUST_LAYER_IDL,
       value: process.env.CROSS_APP_ESCROW_VALUE || '0.05',
-      args: [TRUST_LAYER_OWNER, SENTINEL_OPERATOR, `mainnet:${CONFIG.role}:live:${target.handle}:coordination-escrow:${sequence}:${current}`, Number(process.env.CROSS_APP_DEADLINE_BLOCK || 33450000)],
+      args: [TRUST_LAYER_OWNER, SENTINEL_OPERATOR, `mainnet:${CONFIG.role}:live:${target.handle}:coordination-escrow:${sequence}:${current}`, deadline],
     },
   };
 }
@@ -196,7 +211,8 @@ async function runCrossAppActivity() {
   if (!target) return;
 
   const sequence = Number(state.sequence || 0) + 1;
-  const decision = chooseAction(target, sequence, current);
+  const deadline = await deadlineBlock();
+  const decision = chooseAction(target, sequence, current, deadline);
   let finalDecision = decision;
   let result;
   try {
@@ -209,7 +225,8 @@ async function runCrossAppActivity() {
           pid: TRUST_MARKETPLACE_PID,
           method: 'TrustMarketplace/CreateHireIntent',
           idl: TRUST_MARKETPLACE_IDL,
-          args: [TRUST_LAYER_OWNER, `trust-suite://zenith/fallback-hire/${target.handle}/${sequence}/${current}`, '50000000000', Number(process.env.CROSS_APP_DEADLINE_BLOCK || 33450000)],
+          args: [TRUST_LAYER_OWNER, `trust-suite://zenith/fallback-hire/${target.handle}/${sequence}/${current}`, CROSS_APP_REWARD_RAW, deadline],
+          value: CROSS_APP_REWARD_VALUE,
         },
       };
       result = await callProgram(finalDecision.call);
